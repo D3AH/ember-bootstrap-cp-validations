@@ -1,4 +1,4 @@
-import { not, notEmpty, and, readOnly } from '@ember/object/computed';
+import { not, notEmpty, and, readOnly, filterBy, mapBy } from '@ember/object/computed';
 import { defineProperty } from '@ember/object';
 import BsFormElement from 'ember-bootstrap/components/bs-form/element';
 
@@ -17,29 +17,13 @@ export default BsFormElement.extend({
   // - field is not disabled,
   // - presence validator requires presence
   // - presence validator is enabled
-  required: and(
-    'notDisabled',
-    '_attrValidations.options.presence.presence',
-    '_presenceEnabled'
-  ),
+  required: and('notDisabled', '_attrValidations.options.presence.presence', '_presenceEnabled'),
 
   setupValidations() {
-    let pathToProperty = `model.validations.attrs.${this.get('property')}`;
-
-    // nested objects validations
-    if (this.get('property').includes('.')) {
-      let last = this.get('property').lastIndexOf('.');
-      pathToProperty = `model.${this.get('property').slice(
-        0,
-        last
-      )}.validations.attrs${this.get('property').slice(last)}`;
-    }
-
-    defineProperty(this, '_attrValidations', readOnly(pathToProperty));
-    defineProperty(
-      this,
-      'warnings',
-      readOnly('_attrValidations.warningMessages')
-    );
+    defineProperty(this, '_modelErrors', filterBy('model.errors', 'attribute', this.get('property')));
+    defineProperty(this, 'modelErrors', mapBy('_modelErrors', 'message'));
+    defineProperty(this, '_attrValidations', readOnly(`model.validations.attrs.${this.get('property')}`));
+    defineProperty(this, 'errors', readOnly('_attrValidations.messages'));
+    defineProperty(this, 'warnings', readOnly('_attrValidations.warningMessages'));
   }
 });
